@@ -2,11 +2,19 @@ import { Search, Bell, MessageCircle, User, Plus } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { logout } from '../redux/authSlice'; // adjust path
+import { getAvatarUrl } from '../utils/avatarUrl';
 
 const Navbar = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const user = useSelector(state => state.auth.user);
+    const profile = useSelector(state => state.profile.profile);
+
+    const avatarPath =
+    profile?.avatar ||
+    profile?.user?.profilePicture ||
+    user?.profilePicture;
+
 
   const handleProfile = () => navigate('/profile');
   const handleCreatePost = () => navigate('/create');
@@ -14,6 +22,10 @@ const Navbar = () => {
     dispatch(logout());
     navigate('/login');
   };
+
+  console.log("profile", profile);
+console.log("avatarPath", avatarPath);
+console.log("getAvatarUrl(avatarPath)", getAvatarUrl(avatarPath));
 
   return (
     <nav className="bg-gray-900 text-gray-100 px-6 py-3 flex items-center justify-between border-b border-gray-700 h-full">
@@ -72,7 +84,7 @@ const Navbar = () => {
                 className="flex items-center space-x-2 hover:bg-gray-700 px-2 py-1 rounded-full transition-colors"
               >
                 <img
-                  src={user.profilePicture}
+                  src={getAvatarUrl(avatarPath)}
                   alt="profile"
                   className="h-8 w-8 rounded-full object-cover"
                 />

@@ -1,6 +1,6 @@
 // store/authSlice.js
 import { createSlice } from '@reduxjs/toolkit';
-import { fetchMyProfile } from './profileSlice';
+
 
 const getStoredUser = () => {
   const localUser = localStorage.getItem('user');
@@ -20,11 +20,7 @@ const authSlice = createSlice({
 
       const storage = rememberMe ? localStorage : sessionStorage;
       storage.setItem('user', JSON.stringify(user));
-      // Optional: store token if you're not using httpOnly cookie
-      // storage.setItem('token', user.token);
-        return async (dispatch) => {
-        dispatch(fetchMyProfile());
-      };
+   
     },
 
     logout: (state) => {

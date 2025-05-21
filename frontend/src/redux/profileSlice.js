@@ -1,14 +1,15 @@
 // src/redux/profileSlice.js
 
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import axios from 'axios';
+
+import axiosInstance from '../api/axios';
 
 // 🔄 Async thunk to fetch current user's profile
 export const fetchMyProfile = createAsyncThunk(
   'profile/fetchMyProfile',
   async (_, thunkAPI) => {
     try {
-      const res = await axios.get('/api/profile/me'); // adjust URL if needed
+      const res = await axiosInstance.get('/profile/me'); // adjust URL if needed
       return res.data;
     } catch (error) {
       return thunkAPI.rejectWithValue(error.response.data.message || 'Failed to fetch profile');

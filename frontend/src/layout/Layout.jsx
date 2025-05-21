@@ -1,10 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState,useEffect } from 'react';
 import Navbar from '../components/Navbar';
 import { Outlet } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
+import { useDispatch } from 'react-redux';
+import { fetchMyProfile } from '../redux/profileSlice'
 
 function Layout() {
   const [sidebarExpanded, setSidebarExpanded] = useState(true);
+    const dispatch = useDispatch();
+
+  useEffect(() => {
+    dispatch(fetchMyProfile());
+  }, [dispatch]);
+
 
   return (
     <div className="flex flex-col min-h-screen">

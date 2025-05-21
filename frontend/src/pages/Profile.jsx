@@ -199,7 +199,7 @@ const Profile = () => {
       </div>
     );
   }
-  const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+
 
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
