@@ -15,7 +15,7 @@ DevConnect is a community platform where developers can share articles, ask ques
 
 1. **Clone the repo**
     ```sh
-    git clone https://github.com/anas-muhammed/DevConnect.git
+    git clone https://github.com/anas-muhmed/DevConnect.git
     ```
 
 2. **Frontend and Backend**
