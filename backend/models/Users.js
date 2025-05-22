@@ -26,6 +26,18 @@ const userSchema = new mongoose.Schema({
     type: String,
     default: "", // Shown next to username like "Anas Muhammad (@anas)"
   },
+  followers:[
+    {
+      type:mongoose.Schema.Types.ObjectId,
+      ref:'User'
+    }
+  ],
+  following:[
+    {
+      type:mongoose.Schema.Types.ObjectId,
+      ref:'User'
+    }
+  ],
   // createdAt, updatedAt auto from timestamps below
 }, { timestamps: true });
 
