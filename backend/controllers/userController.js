@@ -37,6 +37,50 @@ const followUser=async(req,res)=>{
  }
 }
 
+const unfollowUser=async(req,res)=>{
+    try{
+        const userIdToUnfollow=req.params.id;
+        const currentUserId=req.user.id;
+
+        //prevent unfollowing yourself
+        if(userIdToUnfollow===currentUserId.toString()){
+            return res.status(400).json({message:'You cant unfollow yourself'});
+        }
+
+        const userToUnFollow=await User.findById(userIdToUnfollow);
+        const currentUser=await User.findById(currentUserId);
+
+        //check if these users exist
+        if(!userToUnFollow||!currentUser){
+            return res.status(404).json({message:'user not found'});
+        }
+
+        //check if not following already
+        if(!currentUser.following.includes(userIdToUnfollow)){
+            return res.status(400).json({message:'you are not following this user'})
+        }
+
+        //remove from the following and followers
+        currentUser.following=currentUser.following.filter(
+            (id)=>id.toString()!==userIdToUnfollow
+        );
+
+        userToUnFollow.followers=userToUnFollow.followers.filter(
+            (id)=>id.toString()!==currentUserId.toString()
+        );
+
+        await currentUser.save();
+        await userToUnFollow.save();
+
+        res.status(200).json({message:'User unfollowed successfully'});
+}catch(error){
+    console.error("Error in unfollowUser:", error.message);
+    res.status(500).json({ message: "Server error while trying to unfollow user" });
+
+}
+}
+
 module.exports={
     followUser,
+    unfollowUser
 }
