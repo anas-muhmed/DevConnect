@@ -8,6 +8,7 @@ const cookieParser=require('cookie-parser');
 const authRoutes=require('./routes/auth');
 const postRoutes = require('./routes/postRoutes');
 const profileRoutes = require('./routes/profile');
+const userRoutes=require('./routes/userRoutes')
 const authMiddleware = require('./middleware/authMiddleware');
 
 dotenv.config();
@@ -38,6 +39,7 @@ app.use(cookieParser()); //to read cookies efectively!
 app.use("/api/auth", authRoutes); // Public (register/login)
 app.use('/api/posts', postRoutes); //partially protected in postRoutes.jsx
 app.use('/api/profile', authMiddleware, profileRoutes); // Protected
+app.use('/api/user/',userRoutes);
 
 // Serve static files from 'public/uploads' directory
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
