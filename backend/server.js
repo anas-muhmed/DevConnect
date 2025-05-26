@@ -16,20 +16,28 @@ const app = express();
 
 //custom cors() for sharing cookiess
 // Ensure your CORS middleware looks like this:
+const allowedOrigins = ["http://localhost:5180", "http://127.0.0.1:5180"];
 app.use(cors({
-  origin: "http://localhost:5180",
+  origin: function(origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
   credentials: true,
   exposedHeaders: ['set-cookie'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
 app.use((req, res, next) => {
+  // Dynamically set Access-Control-Allow-Origin to match the request's Origin
+  if (allowedOrigins.includes(req.headers.origin)) {
+    res.header('Access-Control-Allow-Origin', req.headers.origin);
+  }
   res.header('Access-Control-Allow-Credentials', 'true');
-  res.header('Access-Control-Allow-Origin', 'http://localhost:5180');
   next();
 });
-
-
 
 // Handle cross-origin requests
 app.use(express.json()); // Parse incoming JSON requests
