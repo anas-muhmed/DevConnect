@@ -2,7 +2,18 @@ import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import axiosInstance from '../api/axios';
 
+
+const getCurrentUser=()=>{
+  const user=localStorage.getItem('user')||sessionStorage.getItem('user');
+  return user ? JSON.parse(user) : null;
+}
+
+
 const ProfilePage = () => {
+
+  const currentUser=getCurrentUser();
+
+
   const { username } = useParams();
   const [profileData, setProfileData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -27,6 +38,8 @@ const ProfilePage = () => {
   if (loading) return <p>Loading profile...</p>;
   if (!profileData) return <p>User not found.</p>;
 
+  const isOwnProfile=currentUser?.username===profileData?.username;
+  const isFollowing=currentUser
   return (
     <div className="p-6 max-w-2xl mx-auto">
       <div className="flex items-center gap-4">

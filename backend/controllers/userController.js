@@ -65,6 +65,7 @@ const unfollowUser=async(req,res)=>{
             (id)=>id.toString()!==userIdToUnfollow
         );
 
+        
         userToUnFollow.followers=userToUnFollow.followers.filter(
             (id)=>id.toString()!==currentUserId.toString()
         );

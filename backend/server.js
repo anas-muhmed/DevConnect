@@ -39,7 +39,7 @@ app.use(cookieParser()); //to read cookies efectively!
 app.use("/api/auth", authRoutes); // Public (register/login)
 app.use('/api/posts', postRoutes); //partially protected in postRoutes.jsx
 app.use('/api/profile', authMiddleware, profileRoutes); // Protected
-app.use('/api/user/',userRoutes);
+app.use('/api/user',userRoutes);
 
 // Serve static files from 'public/uploads' directory
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
