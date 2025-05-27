@@ -16,7 +16,7 @@ const app = express();
 
 //custom cors() for sharing cookiess
 // Ensure your CORS middleware looks like this:
-const allowedOrigins = ["http://localhost:5180", "http://127.0.0.1:5180"];
+const allowedOrigins = ["http://127.0.0.1:5180"];
 app.use(cors({
   origin: function(origin, callback) {
     if (!origin || allowedOrigins.includes(origin)) {
@@ -59,6 +59,8 @@ mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('✅ MongoDB Connected'))
   .catch(error => console.error("❌ MongoDB connection error:", error));
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}`));
+app.listen(5000, '127.0.0.1', () => {
+  console.log('Server running on http://127.0.0.1:5000');
+});
+
 
