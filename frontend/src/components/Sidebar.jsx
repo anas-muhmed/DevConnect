@@ -5,9 +5,10 @@ import {
   Moon, Sun
 } from 'lucide-react';
 import { useState } from 'react';
+import useDarkMode from '../hooks/useDarkMode';
 
 const Sidebar = ({ expanded, setExpanded }) => {
-  const [darkMode, setDarkMode] = useState(false);
+  const [darkMode, toggleDarkMode] = useDarkMode();
 
   return (
     <div className={`
@@ -87,7 +88,7 @@ const Sidebar = ({ expanded, setExpanded }) => {
       {/* Dark mode switch */}
       <div className="p-3 border-t border-gray-200 dark:border-gray-700">
         <button
-          onClick={() => setDarkMode(!darkMode)}
+          onClick={toggleDarkMode} // Use the toggle function
           className={`w-full flex items-center p-2 rounded-lg
             bg-gray-100 dark:bg-gray-800
             hover:bg-gray-200 dark:hover:bg-gray-700
