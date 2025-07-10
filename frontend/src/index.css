@@ -3,3 +3,10 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Optional: Add smooth transitions */
+@layer base {
+  body {
+    @apply transition-colors duration-200;
+  }
+}
