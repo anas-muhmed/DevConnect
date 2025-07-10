@@ -38,13 +38,15 @@ const ProfilePage = () => {
   if (loading) return <p>Loading profile...</p>;
   if (!profileData) return <p>User not found.</p>;
 
+  console.log('profileData is :',profileData)
+
   const isOwnProfile=currentUser?.username===profileData?.username;
   const isFollowing=currentUser
   return (
     <div className="p-6 max-w-2xl mx-auto">
       <div className="flex items-center gap-4">
         <img
-          src={profileData.profilePicture || '/default-avatar.png'}
+          src={profileData.profilePicture ||'/default-avatar.png'}
           alt="profile"
           className="w-20 h-20 rounded-full object-cover"
         />

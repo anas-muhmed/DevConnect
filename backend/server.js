@@ -47,7 +47,7 @@ app.use(cookieParser()); //to read cookies efectively!
 app.use("/api/auth", authRoutes); // Public (register/login)
 app.use('/api/posts', postRoutes); //partially protected in postRoutes.jsx
 app.use('/api/profile', authMiddleware, profileRoutes); // Protected
-app.use('/api/user',userRoutes);
+//app.use('/api/user',userRoutes);
 
 // Serve static files from 'public/uploads' directory
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
@@ -58,6 +58,8 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('✅ MongoDB Connected'))
   .catch(error => console.error("❌ MongoDB connection error:", error));
+
+
 
 app.listen(5000, '127.0.0.1', () => {
   console.log('Server running on http://127.0.0.1:5000');

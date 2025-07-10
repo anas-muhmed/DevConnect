@@ -6,13 +6,13 @@ const getMyProfile=async(req,res)=>{
     try{
         const profile=await Profile.findOne({user:req.userId}).populate('user', 'username profilePicture');
         if(!profile){
-            res.status(404).json({message:'profile not found'})
+            return res.status(404).json({message:'profile not found'})
         }
 
          // Combine profile data with user's profile picture {now changed}
         const response = {
-            ...profile._doc,
-            avatar: profile.user.profilePicture || null
+            ...profile.toObject(),
+            avatar: profile.user?.profilePicture || null
         };
 
         res.status(200).json(response)
