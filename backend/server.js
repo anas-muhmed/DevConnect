@@ -39,13 +39,19 @@ app.use((req, res, next) => {
   next();
 });
 
+app.use((req, res, next) => {
+  console.log(`📡 [${req.method}] ${req.url}`);
+  next();
+});
+
+
 // Handle cross-origin requests
 app.use(express.json()); // Parse incoming JSON requests
 app.use(cookieParser()); //to read cookies efectively! 
 
 // Routes
 app.use("/api/auth", authRoutes); // Public (register/login)
-app.use('/api/posts', postRoutes); //partially protected in postRoutes.jsx
+app.use('/api/posts', postRoutes); //partially protected in postRoutes.js
 app.use('/api/profile', authMiddleware, profileRoutes); // Protected
 //app.use('/api/user',userRoutes);
 
