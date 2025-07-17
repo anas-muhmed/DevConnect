@@ -103,4 +103,40 @@ const getAllPost = async(req,res) => {
       res.status(500).json({message:'server error while fetching'});
     }
   }
-module.exports={createPost,getAllPost,DeletePost};
+
+  //upvote and downvote
+       const votePost=async(req,res)=>{
+        
+
+        const{postId}=req.params;
+        const{action}=req.body; //'upvote' or 'downvote'
+        const userId=req.userId;
+
+        try{
+            const post=await Post.findById(postId);
+            
+
+
+            if(!post) return res.status(404).json({message:'Post not Found'});
+
+             // 🛡️ Defensive checks
+  if (!post.upvotes) post.upvotes = [];
+  if (!post.downvotes) post.downvotes = [];
+
+            //remove user from both arrays first
+            post.upvotes.pull(userId);
+            post.downvotes.pull(userId);
+
+            if(action==='upvote'){
+                post.upvotes.push(userId);
+            }else if(action==='downvote'){
+                post.downvotes.push(userId);
+            }
+            await post.save();
+            res.status(200).json({upvotes:post.upvotes.length,downvotes:post.downvotes.length})
+        }catch(err){
+            console.error('vote error:',err)
+            res.status(500).json({message:'Server error'})
+        }
+       }
+module.exports={createPost,getAllPost,DeletePost,votePost};
