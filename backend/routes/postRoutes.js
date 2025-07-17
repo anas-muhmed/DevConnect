@@ -1,5 +1,5 @@
 const express = require('express');
-const { createPost, getAllPost,DeletePost } = require('../controllers/postController');
+const { createPost, getAllPost,DeletePost,votePost} = require('../controllers/postController');
 const authMiddleware = require('../middleware/authMiddleware');
 const multer = require('multer');
 const upload = multer({ dest: 'uploads/' }); // Use the multer configuration from postController
@@ -58,6 +58,8 @@ router.get('/all', getAllPost);
       res.status(500).json({ message: 'Server error' });
     }
   });
+ //upvote/downvote
+  router.post('/:postId/vote',authMiddleware,votePost)
 
 module.exports = router;
 
