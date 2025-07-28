@@ -16,7 +16,9 @@ const app = express();
 
 //custom cors() for sharing cookiess
 // Ensure your CORS middleware looks like this:
-const allowedOrigins = ["http://127.0.0.1:5180"];
+const allowedOrigins = ["http://127.0.0.1:5180",
+  "http://localhost:5180"
+];
 app.use(cors({
   origin: function(origin, callback) {
     if (!origin || allowedOrigins.includes(origin)) {
@@ -52,7 +54,7 @@ app.use(cookieParser()); //to read cookies efectively!
 // Routes
 app.use("/api/auth", authRoutes); // Public (register/login)
 app.use('/api/posts', postRoutes); //partially protected in postRoutes.js
-app.use('/api/profile', authMiddleware, profileRoutes); // Protected
+app.use('/profile', profileRoutes); // Protected
 //app.use('/api/user',userRoutes);
 
 // Serve static files from 'public/uploads' directory
@@ -65,7 +67,7 @@ mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('✅ MongoDB Connected'))
   .catch(error => console.error("❌ MongoDB connection error:", error));
 
-
+ 
 
 app.listen(5000, '127.0.0.1', () => {
   console.log('Server running on http://127.0.0.1:5000');
