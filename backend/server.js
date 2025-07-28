@@ -4,6 +4,7 @@ const dotenv = require('dotenv');
 const cors = require('cors');
 const path = require('path');
 const cookieParser=require('cookie-parser');
+const helmet = require('helmet');
 
 const authRoutes=require('./routes/auth');
 const postRoutes = require('./routes/postRoutes');
@@ -13,6 +14,12 @@ const authMiddleware = require('./middleware/authMiddleware');
 
 dotenv.config();
 const app = express();
+
+// 🛡️ Security headers middleware (add this FIRST!)
+app.use(helmet({
+  contentSecurityPolicy: false, // Disable CSP for now (can be restrictive for development)
+  crossOriginEmbedderPolicy: false // Allow embedding for development
+}));
 
 //custom cors() for sharing cookiess
 // Ensure your CORS middleware looks like this:
