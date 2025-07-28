@@ -6,7 +6,9 @@ import axiosInstance from "./axios";
 // Get current user's profile
 export const  getMyProfile = async () => {
   try {
-    const res = await axiosInstance.get('/profile/me');
+    const res = await axiosInstance.get('/profile/me', {
+      baseURL: 'http://127.0.0.1:5000' // Override baseURL for this call
+    });
     console.log('Profile data:', res.data); // Check response
     return res.data;
   } catch (err) {

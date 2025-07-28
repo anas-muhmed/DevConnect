@@ -13,7 +13,10 @@ import PostDetail from "./pages/PostDetails";
 import CreatePost from "./pages/CreatePost";
 import ComingSoonPage from "./pages/ComingSoonPage";
 
+
 const App = () => {
+
+ 
   return (
     <BrowserRouter>
       <Routes>

@@ -3,6 +3,8 @@ const User=require('../models/Users')
 
 //to fetch users profile
 const getMyProfile=async(req,res)=>{
+    console.log("🔍 Getting profile for userId:", req.userId);
+
     try{
         const profile=await Profile.findOne({user:req.userId}).populate('user', 'username profilePicture');
         if(!profile){
