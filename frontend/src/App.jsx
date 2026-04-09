@@ -12,6 +12,8 @@ import ProfilePage from "./pages/ProfilePage";
 import PostDetail from "./pages/PostDetails"; 
 import CreatePost from "./pages/CreatePost";
 import ComingSoonPage from "./pages/ComingSoonPage";
+import SearchResults from "./pages/SearchResults";
+import NotificationsPage from "./pages/NotificationsPage";
 
 
 const App = () => {
@@ -32,9 +34,10 @@ const App = () => {
             <Route path="/profile/:username" element={<ProfilePage/>}/> {/*viewing other users profile*/}
             <Route path="/posts/:id" element={<PostDetail />} /> 
             <Route path="/create" element={<CreatePost />} />
+            <Route path="/search" element={<SearchResults />} />
             <Route path="/communities" element={<ComingSoonPage feature="Communities" />} />
             <Route path="/explore" element={<ComingSoonPage feature="Explore" />} />
-             <Route path="/notifications" element={<ComingSoonPage feature="Notifications" />} /> 
+             <Route path="/notifications" element={<NotificationsPage />} /> 
              <Route path="/saved" element={<ComingSoonPage feature="Saved Posts" />} />
              <Route path="/discussions" element={<ComingSoonPage feature="Discussions" />} />
           </Route>

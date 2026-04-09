@@ -4,6 +4,11 @@ const mongoose = require('mongoose');
 
 // Create a separate schema for comments
 const commentSchema = new mongoose.Schema({
+  user: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: false // Make optional for backward compatibility with old comments
+  },
   username: {
     type: String,
     required: true

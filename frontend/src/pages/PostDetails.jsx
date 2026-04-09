@@ -12,7 +12,7 @@ const PostDetail = () => {
   useEffect(() => {
     const fetchPost = async () => {
       try {
-        const response = await axiosInstance.get(`http://localhost:5000/api/posts/${id}`);
+        const response = await axiosInstance.get(`/posts/${id}`);
         setPost(response.data);
       } catch (error) {
         console.error('Error fetching post:', error);
@@ -29,7 +29,7 @@ const PostDetail = () => {
   if (!post) return <div className="p-4 text-red-500">Post not found</div>;
 
   return (
-    <div className="p-4 max-w-4xl mx-auto">
+    <div className="layout-content" style={{ maxWidth: '800px', margin: '0 auto', paddingTop: '16px' }}>
       <Postcard post={post} isDetailedView={true} />
     </div>
   );

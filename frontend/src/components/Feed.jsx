@@ -1,19 +1,19 @@
 import React, { useEffect, useState } from 'react';
 import axiosInstance from '../api/axios';
-import FeedCard from './FeedCard';
+import Postcard from './Postcard';
+import { TrendingUp, Sparkles, Zap, Users, Search } from 'lucide-react';
 
 const Feed = () => {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState('latest');
 
   useEffect(() => {
     const fetchPost = async () => {
       try {
         const token = localStorage.getItem('token') || sessionStorage.getItem('token');
-        const response = await axiosInstance.get('http://localhost:5000/api/posts/all', {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+        const response = await axiosInstance.get('/posts/all', {
+          headers: { Authorization: `Bearer ${token}` },
         });
         setPosts(response.data);
       } catch (error) {
@@ -25,31 +25,95 @@ const Feed = () => {
     fetchPost();
   }, []);
 
+  const handlePostUpdate = (updatedPost) => {
+    setPosts(prev => prev.map(post => post._id === updatedPost._id ? updatedPost : post));
+  };
+
+  const handlePostDelete = (postId) => {
+    setPosts(prev => prev.filter(post => post._id !== postId));
+  };
+
+  const getFilteredPosts = () => {
+    switch (filter) {
+      case 'trending':
+        return [...posts].sort((a, b) => {
+          const scoreA = (a.upvotes?.length || 0) - (a.downvotes?.length || 0);
+          const scoreB = (b.upvotes?.length || 0) - (b.downvotes?.length || 0);
+          return scoreB - scoreA;
+        });
+      case 'popular':
+        return [...posts].sort((a, b) =>
+          (b.comments?.length || 0) - (a.comments?.length || 0)
+        );
+      default:
+        return posts;
+    }
+  };
+
+  const filteredPosts = getFilteredPosts();
+
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      <div className="feed-loading">
+        <div className="spinner"></div>
+        <p>Loading amazing content...</p>
       </div>
     );
   }
 
   return (
-    <div className="w-full pl-4 pr-4">
-      <h1 className="text-2xl font-bold text-gray-800 dark:text-white mb-6">Your Feed</h1>
+    <div className="feed-container">
+      {/* Header */}
+      <div className="feed-header">
+        <div className="feed-title-section">
+          <h1 className="feed-title">Your Feed</h1>
+          <p className="feed-subtitle">
+            <Users size={16} /> {posts.length} posts from your network
+          </p>
+        </div>
 
-      <div className="grid grid-cols-1 gap-6">
-        {posts.length > 0 ? (
-          posts.map((post) => (
-            <FeedCard key={post._id} post={post} />
+        {/* Filter Tabs */}
+        <div className="feed-tabs">
+          <button
+            onClick={() => setFilter('latest')}
+            className={`feed-tab-btn ${filter === 'latest' ? 'active' : ''}`}
+          >
+            <Zap size={16} /> Latest
+          </button>
+          <button
+            onClick={() => setFilter('trending')}
+            className={`feed-tab-btn ${filter === 'trending' ? 'active' : ''}`}
+          >
+            <TrendingUp size={16} /> Trending
+          </button>
+          <button
+            onClick={() => setFilter('popular')}
+            className={`feed-tab-btn ${filter === 'popular' ? 'active' : ''}`}
+          >
+            <Sparkles size={16} /> Popular
+          </button>
+        </div>
+      </div>
+
+      {/* Posts */}
+      <div className="feed-posts">
+        {filteredPosts.length > 0 ? (
+          filteredPosts.map((post) => (
+            <Postcard
+              key={post._id}
+              post={post}
+              onUpdate={handlePostUpdate}
+              onDelete={handlePostDelete}
+            />
           ))
         ) : (
-          <div className="text-center py-10">
-            <div className="text-gray-500 dark:text-gray-400 mb-4">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-            <p className="text-gray-700 dark:text-gray-300">No posts found. Be the first to create one!</p>
+          <div className="feed-empty card">
+            <Search size={48} className="empty-icon font-tertiary" style={{ color: 'var(--text-tertiary)' }} />
+            <h3>No Posts Yet</h3>
+            <p>Be the first to share something amazing! Click the Create button to start your journey.</p>
+            <button onClick={() => window.location.href = '/create'} className="btn-primary flex-center gap-sm mt-4">
+              <Sparkles size={18} /> Create Your First Post
+            </button>
           </div>
         )}
       </div>

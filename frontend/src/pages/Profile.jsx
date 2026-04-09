@@ -4,9 +4,13 @@ import { toast } from "react-toastify";
 import { useDispatch } from "react-redux";
 import { updateProfile } from "../redux/authSlice";
 import axiosInstance from "../api/axios";
-import { getAvatarUrl } from "../utils/avatarUrl";
+import { getAvatarUrl, getInitials, getAvatarColor } from "../utils/avatarUrl";
 import { updateMyProfile, getMyProfile } from "../api/profile";
-import { Edit, Globe, Github, Linkedin, MapPin, User, Loader2 } from "lucide-react";
+import {
+  Edit, Globe, Github, Linkedin, MapPin, User, Loader2, Camera, Check, X,
+  Mail, Calendar, Code2, Star, TrendingUp, MessageCircle, Zap
+} from "lucide-react";
+import moment from "moment";
 
 const Profile = () => {
   const [profile, setProfile] = useState(null);
@@ -20,9 +24,12 @@ const Profile = () => {
   });
   const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
+  const [avatarError, setAvatarError] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [editingUsername, setEditingUsername] = useState(false);
+  const [newUsername, setNewUsername] = useState("");
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  //const user = useSelector(selectUser);
   const fileInputRef = useRef(null);
 
   const ensureValidUrl = (url) => {
@@ -34,7 +41,6 @@ const Profile = () => {
   useEffect(() => {
     const fetchProfile = async () => {
       const token = localStorage.getItem("token") || sessionStorage.getItem("token");
-
       if (!token) {
         toast.error("Please login to view your profile");
         navigate("/");
@@ -52,12 +58,10 @@ const Profile = () => {
           website: profileData.website || "",
           location: profileData.location || "",
         });
+        setNewUsername(profileData.user?.username || "");
       } catch (err) {
-        console.error("Profile fetch error:", err);
         if (err.response?.status === 401) {
           toast.error("Session expired. Please log in again");
-          localStorage.removeItem("token");
-          sessionStorage.removeItem("token");
           navigate("/login");
         } else {
           toast.error("Failed to load profile");
@@ -85,346 +89,380 @@ const Profile = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value,
-    }));
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
   const handleImageChange = async (e) => {
     if (!e.target.files?.[0]) return;
-    
     const file = e.target.files[0];
-    const formData = new FormData();
-    formData.append("profilePicture", file);
+
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please upload an image file");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image must be less than 5MB");
+      return;
+    }
+
+    const formDataToSend = new FormData();
+    formDataToSend.append("profilePicture", file);
+    setUploadingAvatar(true);
 
     try {
       const token = localStorage.getItem("token") || sessionStorage.getItem("token");
-      console.log("Uploading file:", file.name, file.size, file.type);
-
-      const res = await axiosInstance.put("/profile/upload/profile-picture", formData, {
+      const response = await axiosInstance.put("/profile/upload/profile-picture", formDataToSend, {
         headers: {
           "Content-Type": "multipart/form-data",
-          Authorization: `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
         },
       });
 
-      console.log("Upload response:", res.data);
+      const updatedAvatarPath = response.data.avatar || response.data.profilePicture;
+      setProfile(prev => ({ ...prev, avatar: updatedAvatarPath }));
+      setAvatarError(false);
+      toast.success("✨ Profile picture updated!");
+      window.location.reload();
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to upload avatar");
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
 
-      const imageUrl = res.data.avatar;
-      if (!imageUrl) {
-        throw new Error("Server response missing image URL");
-      }
+  const handleUpdateUsername = async () => {
+    if (!newUsername.trim() || newUsername === profile?.user?.username) {
+      setEditingUsername(false);
+      return;
+    }
 
-      // Construct full URL
-      const baseUrl = import.meta.env.VITE_API_BASE_URL || "";
-      const fullImageUrl = imageUrl.startsWith("http") 
-        ? imageUrl 
-        : `${baseUrl.replace(/\/api$/, "")}${imageUrl}`;
+    try {
+      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+      const response = await axiosInstance.put("/user/update-username", { username: newUsername }, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
-      // Add timestamp to force cache refresh
-      const timestampedUrl = `${fullImageUrl}?t=${Date.now()}`;
-
-      // Update both Redux and local state
-      dispatch(updateProfile({ avatar: timestampedUrl }));
-      setProfile(prev => ({ 
-        ...prev, 
-        avatar: timestampedUrl,
-        user: {
-          ...prev.user,
-          profilePicture: timestampedUrl
-        }
+      setProfile(prev => ({
+        ...prev,
+        user: { ...prev.user, username: response.data.user.username },
       }));
 
-      toast.success("Profile picture updated successfully");
-    } catch (err) {
-      console.error("Upload error:", {
-        error: err,
-        response: err.response?.data
-      });
-      toast.error(err.response?.data?.message || "Failed to update profile picture");
-      
-      if (err.response?.status === 401) {
-        localStorage.removeItem("token");
-        sessionStorage.removeItem("token");
-        navigate("/login");
+      const currentUser = JSON.parse(localStorage.getItem("user") || sessionStorage.getItem("user") || "{}");
+      const updatedUser = { ...currentUser, username: response.data.user.username };
+      if (localStorage.getItem("user")) {
+        localStorage.setItem("user", JSON.stringify(updatedUser));
+      } else {
+        sessionStorage.setItem("user", JSON.stringify(updatedUser));
       }
+
+      dispatch(updateProfile({ username: response.data.user.username }));
+      setEditingUsername(false);
+      toast.success("✅ Username updated!");
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to update username");
+      setNewUsername(profile?.user?.username || "");
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const token = localStorage.getItem("token") || sessionStorage.getItem("token");
-
-    if (!token) {
-      toast.error("Please login again.");
-      return navigate("/login");
-    }
-
     try {
-      setIsLoading(true);
-      const normalizedData = {
-        ...formData,
-        skills: formData.skills.split(",").map(skill => skill.trim()),
-        github: ensureValidUrl(formData.github),
-        linkedin: ensureValidUrl(formData.linkedin),
-        website: ensureValidUrl(formData.website),
+      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+      const skillsArray = formData.skills
+        .split(",")
+        .map(s => s.trim())
+        .filter(s => s.length > 0);
+
+      const updatedData = {
+        bio: formData.bio,
+        skills: skillsArray,
+        github: formData.github,
+        linkedin: formData.linkedin,
+        website: formData.website,
+        location: formData.location,
       };
 
-      await updateMyProfile(normalizedData, token);
-      const freshData = await getMyProfile(token);
-      setProfile(freshData);
+      await updateMyProfile(token, updatedData);
+      setProfile(prev => ({ ...prev, ...updatedData }));
       setIsEditing(false);
-      toast.success("Profile updated successfully!");
+      toast.success("✅ Profile updated successfully!");
     } catch (err) {
-      console.error("Update error:", err);
       toast.error(err.response?.data?.message || "Failed to update profile");
-    } finally {
-      setIsLoading(false);
     }
   };
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="h-12 w-12 animate-spin text-blue-500" />
+      <div className="feed-loading" style={{ minHeight: '100vh' }}>
+        <div className="spinner"></div>
+        <p>Loading profile...</p>
       </div>
     );
   }
 
-  if (!profile) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <p>Failed to load profile data</p>
-      </div>
-    );
-  }
-
+  const avatarPath = profile?.avatar || profile?.user?.profilePicture;
+  const username = profile?.user?.username || "User";
+  const email = profile?.user?.email || "";
+  const initials = getInitials(username);
+  const avatarColor = getAvatarColor(username);
+  const skillsArray = profile?.skills || [];
+  const joinedDate = profile?.user?.createdAt ? moment(profile.user.createdAt).format("MMMM YYYY") : "Recently";
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-4xl mx-auto">
-        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-          <div className="bg-gradient-to-r from-blue-500 to-purple-600 h-32"></div>
-          <div className="px-6 pb-6 -mt-16 relative">
-            <div className="flex justify-between items-end">
-              <div className="flex items-end">
-                <div 
-                  className="relative group h-24 w-24 rounded-full border-4 border-white bg-white flex items-center justify-center shadow-md overflow-hidden cursor-pointer"
-                  onClick={() => isEditing && fileInputRef.current?.click()}
+    <div className="profile-container">
+      {/* Profile Header Card */}
+      <div className="profile-header-card">
+        {/* Cover Background */}
+        <div className="profile-cover"></div>
+
+        {/* Profile Info */}
+        <div className="profile-info-section">
+          {/* Avatar */}
+          <div className="profile-avatar-wrapper group">
+            <div className="relative">
+              {avatarPath && !avatarError ? (
+                <img
+                  src={getAvatarUrl(avatarPath)}
+                  alt={username}
+                  className="profile-avatar"
+                  onError={() => setAvatarError(true)}
+                />
+              ) : (
+                <div
+                  className="profile-avatar placeholder"
+                  style={{ backgroundColor: avatarColor }}
                 >
-                {profile?.avatar || profile.user?.profilePicture ? (
-                  <img
-                    src={getAvatarUrl(profile.avatar || profile.user?.profilePicture)}
-                    alt="Profile"
-                    className="rounded-full h-full w-full object-cover"
-                    onError={(e) => {
-                      e.target.onerror = null;
-                      e.target.src = '/default-avatar.jpg';
-                      console.error(
-                        'Failed to load avatar:',
-                        profile.avatar || profile.user?.profilePicture
-                      );
-                    }}
-                    key={profile.avatar || profile.user?.profilePicture}
-                  />
+                  {initials}
+                </div>
+              )}
+
+              {/* Camera overlay */}
+              <div
+                onClick={() => !uploadingAvatar && fileInputRef.current?.click()}
+                className="camera-overlay"
+              >
+                {uploadingAvatar ? (
+                  <Loader2 className="animate-spin" size={32} />
                 ) : (
-                  <User className="h-12 w-12 text-gray-400" />
+                  <>
+                    <Camera size={32} />
+                    <span style={{ fontSize: '12px', marginTop: '4px' }}>Change Photo</span>
+                  </>
                 )}
-
-                  {isEditing && (
-                    <>
-                      <input
-                        type="file"
-                        ref={fileInputRef}
-                        accept="image/*"
-                        onChange={handleImageChange}
-                        className="hidden"
-                      />
-                      <div className="absolute bottom-0 bg-black bg-opacity-50 text-white text-xs w-full text-center py-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        Change Photo
-                      </div>
-                    </>
-                  )}
-                </div>
-
-                <div className="ml-6 mb-2">
-                  <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
-                    {profile.user?.username || "No Username"}
-                  </h1>
-                  {profile.title && (
-                    <p className="text-gray-600">{profile.title}</p>
-                  )}
-                </div>
               </div>
-              <div className="flex flex-col sm:flex-row gap-2">
-                <button
-                  onClick={() => setIsEditing(!isEditing)}
-                  className="flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
-                >
-                  <Edit className="h-4 w-4" />
-                  <span>{isEditing ? "Cancel" : "Edit Profile"}</span>
-                </button>
-                <button
-                  onClick={handleLogout}
-                  className="flex items-center justify-center px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
-                >
-                  Logout
-                </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleImageChange}
+                style={{ display: 'none' }}
+              />
+            </div>
+          </div>
+
+          <div className="profile-top-row">
+            <div>
+              {/* Username */}
+              {editingUsername ? (
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '8px' }}>
+                  <input
+                    type="text"
+                    value={newUsername}
+                    onChange={(e) => setNewUsername(e.target.value)}
+                    className="search-input"
+                    style={{ fontSize: '1.25rem', fontWeight: 'bold', padding: '8px 16px', borderRadius: '8px' }}
+                  />
+                  <button onClick={handleUpdateUsername} className="btn-primary flex-center" style={{ padding: '8px', borderRadius: '8px' }}>
+                    <Check size={20} />
+                  </button>
+                  <button onClick={() => { setEditingUsername(false); setNewUsername(profile?.user?.username || ""); }} className="btn-outline flex-center" style={{ padding: '8px', borderRadius: '8px' }}>
+                    <X size={20} />
+                  </button>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  <h1 className="profile-name">{username}</h1>
+                  <button onClick={() => setEditingUsername(true)} style={{ color: 'var(--text-tertiary)', padding: '4px' }}>
+                    <Edit size={18} />
+                  </button>
+                </div>
+              )}
+
+              <div className="profile-meta">
+                <div className="profile-meta-item">
+                  <Mail size={16} />
+                  <span>{email}</span>
+                </div>
+                <div className="profile-meta-item">
+                  <Calendar size={16} />
+                  <span>Joined {joinedDate}</span>
+                </div>
               </div>
             </div>
 
-            <div className="mt-4 flex gap-4">
-              {profile.github && (
-                <a
-                  href={ensureValidUrl(profile.github)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-gray-500 hover:text-gray-700"
-                  aria-label="GitHub"
-                >
-                  <Github className="h-5 w-5" />
-                </a>
-              )}
-              {profile.linkedin && (
-                <a
-                  href={ensureValidUrl(profile.linkedin)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-gray-500 hover:text-gray-700"
-                  aria-label="LinkedIn"
-                >
-                  <Linkedin className="h-5 w-5" />
-                </a>
-              )}
-              {profile.website && (
-                <a
-                  href={ensureValidUrl(profile.website)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-gray-500 hover:text-gray-700"
-                  aria-label="Website"
-                >
-                  <Globe className="h-5 w-5" />
-                </a>
+            {/* Edit/Logout Buttons */}
+            <div style={{ display: 'flex', gap: '12px' }}>
+              {!isEditing ? (
+                <>
+                  <button onClick={() => setIsEditing(true)} className="btn-primary flex-center gap-sm">
+                    <Edit size={16} /> Edit Profile
+                  </button>
+                  <button onClick={handleLogout} className="btn-outline">
+                    Logout
+                  </button>
+                </>
+              ) : (
+                <button onClick={() => setIsEditing(false)} className="btn-outline flex-center gap-sm">
+                  <X size={16} /> Cancel
+                </button>
               )}
             </div>
           </div>
         </div>
+      </div>
 
-        <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-3">
-          <div className="lg:col-span-2">
+      <div className="profile-grid">
+        {/* Left Column - About & Skills */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+          {/* Bio Section */}
+          <div className="profile-section-card">
+            <h2 className="profile-section-title">
+              <User size={20} className="text-secondary" /> About
+            </h2>
             {isEditing ? (
-              <div className="bg-white rounded-xl shadow-sm overflow-hidden p-6">
-                <form onSubmit={handleSubmit} className="space-y-6">
-                  {[
-                    { label: "Bio", name: "bio", type: "textarea", icon: null },
-                    {
-                      label: "Skills (comma separated)",
-                      name: "skills",
-                      type: "text",
-                      placeholder: "JavaScript, React, Node.js",
-                      icon: null,
-                    },
-                    {
-                      label: "GitHub URL",
-                      name: "github",
-                      type: "url",
-                      icon: <Github className="h-5 w-5 text-gray-400" />,
-                    },
-                    {
-                      label: "LinkedIn URL",
-                      name: "linkedin",
-                      type: "url",
-                      icon: <Linkedin className="h-5 w-5 text-gray-400" />,
-                    },
-                    {
-                      label: "Website",
-                      name: "website",
-                      type: "url",
-                      icon: <Globe className="h-5 w-5 text-gray-400" />,
-                    },
-                    {
-                      label: "Location",
-                      name: "location",
-                      type: "text",
-                      icon: <MapPin className="h-5 w-5 text-gray-400" />,
-                    },
-                  ].map((field) => (
-                    <div key={field.name}>
-                      <label htmlFor={field.name} className="block text-sm font-medium text-gray-700 mb-1">
-                        {field.label}
-                      </label>
-                      <div className="relative rounded-md shadow-sm">
-                        {field.icon && (
-                          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            {field.icon}
-                          </div>
-                        )}
-                        {field.type === "textarea" ? (
-                          <textarea
-                            id={field.name}
-                            name={field.name}
-                            value={formData[field.name]}
-                            onChange={handleChange}
-                            rows={4}
-                            className={`block w-full ${field.icon ? 'pl-10' : ''} sm:text-sm border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500`}
-                          />
-                        ) : (
-                          <input
-                            type={field.type}
-                            id={field.name}
-                            name={field.name}
-                            placeholder={field.placeholder}
-                            value={formData[field.name]}
-                            onChange={handleChange}
-                            className={`block w-full ${field.icon ? 'pl-10' : ''} sm:text-sm border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500`}
-                          />
-                        )}
-                      </div>
-                    </div>
-                  ))}
-
-                  <button
-                    type="submit"
-                    disabled={isLoading}
-                    className="w-full py-2 px-4 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700 transition disabled:opacity-70 disabled:cursor-not-allowed"
-                  >
-                    {isLoading ? "Saving..." : "Save Changes"}
-                  </button>
-                </form>
-              </div>
+              <textarea
+                name="bio"
+                value={formData.bio}
+                onChange={handleChange}
+                className="search-input"
+                style={{ borderRadius: '8px', padding: '12px 16px', minHeight: '100px', resize: 'vertical' }}
+                placeholder="Tell us about yourself..."
+              />
             ) : (
-              <div className="bg-white rounded-xl shadow-sm overflow-hidden p-6 space-y-6">
-                {profile.bio && (
-                  <div>
-                    <h3 className="text-sm font-semibold text-gray-500">Bio</h3>
-                    <p className="text-gray-800 mt-1 whitespace-pre-line">{profile.bio}</p>
-                  </div>
-                )}
-                {profile.skills?.length > 0 && (
-                  <div>
-                    <h3 className="text-sm font-semibold text-gray-500">Skills</h3>
-                    <div className="flex flex-wrap gap-2 mt-2">
-                      {profile.skills.map((skill, index) => (
-                        <span
-                          key={index}
-                          className="px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full"
-                        >
-                          {skill}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                {profile.location && (
-                  <div>
-                    <h3 className="text-sm font-semibold text-gray-500">Location</h3>
-                    <p className="text-gray-800 mt-1">{profile.location}</p>
-                  </div>
+              <p style={{ color: 'var(--text-secondary)', lineHeight: '1.6' }}>
+                {profile?.bio || "No bio yet. Click Edit Profile to add one!"}
+              </p>
+            )}
+          </div>
+
+          {/* Skills Section */}
+          <div className="profile-section-card">
+            <h2 className="profile-section-title">
+              <Code2 size={20} className="text-secondary" /> Skills
+            </h2>
+            {isEditing ? (
+              <input
+                type="text"
+                name="skills"
+                value={formData.skills}
+                onChange={handleChange}
+                className="search-input"
+                style={{ borderRadius: '8px' }}
+                placeholder="React, Node.js, Python (comma separated)"
+              />
+            ) : (
+              <div className="skills-container">
+                {skillsArray.length > 0 ? (
+                  skillsArray.map((skill, index) => (
+                    <span key={index} className="skill-tag">{skill}</span>
+                  ))
+                ) : (
+                  <p style={{ color: 'var(--text-tertiary)' }}>No skills added yet</p>
                 )}
               </div>
             )}
+          </div>
+
+          {/* Save Button (when editing) */}
+          {isEditing && (
+            <button onClick={handleSubmit} className="btn-primary flex-center gap-sm" style={{ padding: '16px', fontSize: '16px', borderRadius: '12px' }}>
+              <Check size={20} /> Save Changes
+            </button>
+          )}
+        </div>
+
+        {/* Right Column - Social Links & Stats */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+          {/* Social Links */}
+          <div className="profile-section-card">
+            <h2 className="profile-section-title">
+              <Globe size={20} className="text-secondary" /> Links
+            </h2>
+            <div className="links-list">
+              {isEditing ? (
+                <>
+                  <div className="form-group">
+                    <label className="form-label">GitHub</label>
+                    <input type="text" name="github" value={formData.github} onChange={handleChange} className="search-input" style={{ borderRadius: '8px' }} placeholder="github.com/username" />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">LinkedIn</label>
+                    <input type="text" name="linkedin" value={formData.linkedin} onChange={handleChange} className="search-input" style={{ borderRadius: '8px' }} placeholder="linkedin.com/in/username" />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Website</label>
+                    <input type="text" name="website" value={formData.website} onChange={handleChange} className="search-input" style={{ borderRadius: '8px' }} placeholder="yourwebsite.com" />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Location</label>
+                    <input type="text" name="location" value={formData.location} onChange={handleChange} className="search-input" style={{ borderRadius: '8px' }} placeholder="City, Country" />
+                  </div>
+                </>
+              ) : (
+                <>
+                  {profile?.github && (
+                    <a href={ensureValidUrl(profile.github)} target="_blank" rel="noopener noreferrer" className="link-item">
+                      <Github size={20} /> GitHub
+                    </a>
+                  )}
+                  {profile?.linkedin && (
+                    <a href={ensureValidUrl(profile.linkedin)} target="_blank" rel="noopener noreferrer" className="link-item">
+                      <Linkedin size={20} /> LinkedIn
+                    </a>
+                  )}
+                  {profile?.website && (
+                    <a href={ensureValidUrl(profile.website)} target="_blank" rel="noopener noreferrer" className="link-item">
+                      <Globe size={20} /> Website
+                    </a>
+                  )}
+                  {profile?.location && (
+                    <div className="link-item">
+                      <MapPin size={20} /> {profile.location}
+                    </div>
+                  )}
+                  {!profile?.github && !profile?.linkedin && !profile?.website && !profile?.location && (
+                    <p style={{ color: 'var(--text-tertiary)', fontSize: '14px' }}>No links added yet</p>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* Stats Card */}
+          <div className="profile-section-card" style={{ backgroundColor: 'var(--bg-main)', border: 'none', boxShadow: 'none' }}>
+            <h2 className="profile-section-title">
+              <TrendingUp size={20} style={{ color: 'var(--accent-color)' }} /> Activity
+            </h2>
+            <div className="stats-list">
+              <div className="stat-item">
+                <div className="stat-label">
+                  <MessageCircle size={18} /> Posts
+                </div>
+                <span className="stat-value">0</span>
+              </div>
+              <div className="stat-item">
+                <div className="stat-label">
+                  <Star size={18} /> Reputation
+                </div>
+                <span className="stat-value">100</span>
+              </div>
+              <div className="stat-item">
+                <div className="stat-label">
+                  <Zap size={18} /> Contributions
+                </div>
+                <span className="stat-value">0</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>

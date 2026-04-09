@@ -1,19 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import axiosInstance from '../api/axios';
-
-
-const getCurrentUser=()=>{
-  const user=localStorage.getItem('user')||sessionStorage.getItem('user');
-  return user ? JSON.parse(user) : null;
-}
-
+import { getAvatarUrl, getInitials, getAvatarColor } from '../utils/avatarUrl';
+import Postcard from '../components/Postcard';
 
 const ProfilePage = () => {
-
-  const currentUser=getCurrentUser();
-
-
   const { username } = useParams();
   const [profileData, setProfileData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -25,7 +16,6 @@ const ProfilePage = () => {
         const res = await axiosInstance(`/profile/${username}`);
         setProfileData(res.data);
       } catch (err) {
-        console.error('Failed to fetch profile', err);
         setProfileData(null);
       } finally {
         setLoading(false);
@@ -35,39 +25,80 @@ const ProfilePage = () => {
     fetchProfile();
   }, [username]);
 
-  if (loading) return <p>Loading profile...</p>;
-  if (!profileData) return <p>User not found.</p>;
+  if (loading) {
+    return (
+      <div className="feed-loading" style={{ minHeight: '100vh' }}>
+        <div className="spinner"></div>
+        <p>Loading profile...</p>
+      </div>
+    );
+  }
 
-  console.log('profileData is :',profileData)
+  if (!profileData) {
+    return (
+      <div className="feed-empty card mt-8">
+        <h3>User not found</h3>
+        <p>This profile doesn't exist or may have been deleted.</p>
+      </div>
+    );
+  }
 
-  const isOwnProfile=currentUser?.username===profileData?.username;
-  const isFollowing=currentUser
+  const avatarPath = profileData.user?.profilePicture || profileData.avatar;
+  const initials = getInitials(profileData.username);
+  const avatarColor = getAvatarColor(profileData.username);
+
   return (
-    <div className="p-6 max-w-2xl mx-auto">
-      <div className="flex items-center gap-4">
-        <img
-          src={profileData.profilePicture ||'/default-avatar.png'}
-          alt="profile"
-          className="w-20 h-20 rounded-full object-cover"
-        />
-        <div>
-          <h1 className="text-2xl font-bold">{profileData.username}</h1>
-          <p className="text-gray-600">{profileData.bio || 'No bio available'}</p>
+    <div className="profile-container">
+      {/* Profile Header Card */}
+      <div className="profile-header-card">
+        <div className="profile-cover"></div>
+
+        <div className="profile-info-section">
+          <div className="profile-avatar-wrapper">
+            {avatarPath ? (
+              <img
+                src={getAvatarUrl(avatarPath)}
+                alt={profileData.username}
+                className="profile-avatar"
+              />
+            ) : (
+              <div className="profile-avatar placeholder" style={{ backgroundColor: avatarColor }}>
+                {initials}
+              </div>
+            )}
+          </div>
+
+          <div className="profile-top-row">
+            <div>
+              <h1 className="profile-name">{profileData.username}</h1>
+              <div className="profile-meta">
+                <span className="profile-meta-item">
+                  {profileData.bio || 'No bio available'}
+                </span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Posts section (optional) */}
-      {profileData.posts?.length > 0 && (
-        <div className="mt-6">
-          <h2 className="text-xl font-semibold mb-2">Posts by {profileData.username}</h2>
-          {profileData.posts.map((post) => (
-            <div key={post._id} className="border rounded p-3 mb-2">
-              <h3 className="font-bold">{post.title}</h3>
-              <p className="text-sm text-gray-700">{post.content.slice(0, 100)}...</p>
-            </div>
-          ))}
-        </div>
-      )}
+      {/* Posts section */}
+      <div className="feed-posts" style={{ maxWidth: '768px' }}>
+        <h2 className="profile-section-title" style={{ marginBottom: '16px' }}>
+          Posts by {profileData.username}
+        </h2>
+
+        {profileData.posts?.length > 0 ? (
+          <div className="feed-posts">
+            {profileData.posts.map((post) => (
+              <Postcard key={post._id} post={post} />
+            ))}
+          </div>
+        ) : (
+          <div className="feed-empty card">
+            <p>{profileData.username} hasn't posted anything yet.</p>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

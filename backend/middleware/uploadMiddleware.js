@@ -1,24 +1,23 @@
-const multer=require('multer')
-const path=require('path')
+const multer = require('multer');
 
-//storage configuration
-const storage=multer.diskStorage({
-    destination:(req,file,cb)=>{
-        cb(null,'public/uploads/')  //save it in this folder
-    },
-    filename:(req,file,cb)=>{
-        cb(null,Date.now()+path.extname(file.originalname));
-    }
-})
-//filter images only
-const fileFilter=(req,file,cb)=>{
-    if (file.mimetype.startsWith('image/')){
-        cb(null,true);
-    }else{
+// Store files in memory so Sharp can optimize before uploading to S3.
+const storage = multer.memoryStorage();
+
+// Filter images only.
+const fileFilter = (req, file, cb) => {
+    if (file.mimetype && file.mimetype.startsWith('image/')) {
+        cb(null, true);
+    } else {
         cb(new Error('Not an image file!'), false);
     }
+};
 
-}
-const upload = multer({ storage, fileFilter });
+const upload = multer({
+    storage,
+    fileFilter,
+    limits: {
+        fileSize: 10 * 1024 * 1024, // 10 MB
+    },
+});
 
-module.exports=upload;
+module.exports = upload;

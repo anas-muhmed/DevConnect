@@ -81,7 +81,43 @@ const unfollowUser=async(req,res)=>{
 }
 }
 
+const updateUsername = async (req, res) => {
+  try {
+    const { username } = req.body;
+
+    if (!username || username.trim().length < 3) {
+      return res.status(400).json({ message: 'Username must be at least 3 characters' });
+    }
+
+    // Check if username is already taken
+    const existingUser = await User.findOne({ 
+      username: username.trim(), 
+      _id: { $ne: req.userId } 
+    });
+
+    if (existingUser) {
+      return res.status(400).json({ message: 'Username already taken' });
+    }
+
+    // Update username
+    const user = await User.findByIdAndUpdate(
+      req.userId,
+      { username: username.trim() },
+      { new: true }
+    ).select('-password');
+
+    res.status(200).json({ 
+      message: 'Username updated successfully',
+      user 
+    });
+  } catch (err) {
+    console.error('Error updating username:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
 module.exports={
     followUser,
-    unfollowUser
+    unfollowUser,
+    updateUsername
 }

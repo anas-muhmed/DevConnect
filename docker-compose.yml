@@ -1,0 +1,47 @@
+services:
+  # Service 1: MongoDB Database
+  mongodb:
+    image: mongo:4.4  # Using 4.4 for CPU compatibility (no AVX required)
+    container_name: devconnect-mongo
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password123
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - devconnect-network
+
+  # Service 2: Backend API
+  backend:
+    build: ./backend
+    container_name: devconnect-backend
+    ports:
+      - "5001:5000"
+    env_file:
+      - ./backend/.env.docker
+    depends_on:
+      - mongodb
+    volumes:
+      - ./backend/uploads:/usr/src/app/uploads
+    networks:
+      - devconnect-network
+
+  # Service 3: Frontend (React + Nginx)
+  frontend:
+    build: ./frontend
+    container_name: devconnect-frontend
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+    networks:
+      - devconnect-network
+
+# Named volumes for persistent data
+volumes:
+  mongo-data:
+
+# Custom network (optional but good practice)
+networks:
+  devconnect-network:
+    driver: bridge

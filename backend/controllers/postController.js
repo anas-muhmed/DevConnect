@@ -1,5 +1,6 @@
 const Post=require('../models/Post')
 const Users=require('../models/Users')
+const { createNotification } = require('./notificationController');
 
 
 //for creating post
@@ -7,8 +8,10 @@ const Users=require('../models/Users')
     console.log(req.body); // Check if the title and username are correctly passed
     console.log(req.file); // Check if the file is being received by multer
     try{
-        const {title,content,profilePic}=req.body;
-        const image = req.file ? `/uploads/${req.file.filename.replace(/\\/g, '/')}` : null;
+                const {title,content,profilePic}=req.body;
+                const image = req.file
+                    ? (req.file.location || `/uploads/${req.file.filename.replace(/\\/g, '/')}`)
+                    : null;
 
 
         if(!title||!content||!image){
@@ -25,7 +28,7 @@ const Users=require('../models/Users')
             user: req.userId, // we'll extract this from middleware (JWT)
             title,
             content,
-            image:'/uploads/' + req.file.filename,
+            image,
             profilePic,
             username:user.username,
         });
@@ -45,37 +48,64 @@ const DeletePost = async (req, res) => {
     try {
         const { postId } = req.params;
         
-        console.log("[DEBUG] Delete Request - Auth Info:", {
-            userIdFromAuth: req.userId,  // From your auth middleware
-            userObject: req.user         // Might be undefined
-        });
-
         const post = await Post.findById(postId);
         
         if (!post) {
             return res.status(404).json({ message: 'Post not found' });
         }
 
-        // FIX: Use req.userId instead of req.user.id
+        // Check ownership
         if (post.user.toString() !== req.userId) {
             return res.status(403).json({ 
-                message: "Unauthorized to delete this post",
-                details: {
-                    postOwner: post.user.toString(),
-                    requestingUser: req.userId
-                }
+                message: "Unauthorized to delete this post"
             });
         }
 
         await post.deleteOne();
         res.status(200).json({ message: 'Post deleted successfully' });
     } catch (error) {
-        console.error("Delete Error:", {
-            message: error.message,
-            stack: error.stack
-        });
+        console.error("Delete Error:", error.message);
         res.status(500).json({ 
             message: "Internal server error",
+            error: error.message 
+        });
+    }
+};
+
+//for updating post
+const updatePost = async (req, res) => {
+    try {
+        const { postId } = req.params;
+        const { title, content } = req.body;
+        
+        const post = await Post.findById(postId);
+        
+        if (!post) {
+            return res.status(404).json({ message: 'Post not found' });
+        }
+
+        // Check ownership
+        if (post.user.toString() !== req.userId) {
+            return res.status(403).json({ 
+                message: "Unauthorized to edit this post"
+            });
+        }
+
+        // Update fields
+        if (title) post.title = title;
+        if (content) post.content = content;
+        post.updatedAt = Date.now();
+
+        await post.save();
+        
+        const updatedPost = await Post.findById(postId)
+            .populate('user', 'username profilePicture _id');
+        
+        res.status(200).json(updatedPost);
+    } catch (error) {
+        console.error("Update Error:", error.message);
+        res.status(500).json({ 
+            message: "Failed to update post",
             error: error.message 
         });
     }
@@ -87,7 +117,7 @@ const DeletePost = async (req, res) => {
 const getAllPost = async(req,res) => {
     try {
       const posts = await Post.find()
-        .populate('user', 'username profilePic _id') 
+        .populate('user', 'username profilePicture _id') 
         .sort({createdAt:-1})
         .lean(); // Convert to plain JS objects
       
@@ -129,6 +159,15 @@ const getAllPost = async(req,res) => {
 
             if(action==='upvote'){
                 post.upvotes.push(userId);
+                
+                // Create notification for post owner
+                await createNotification({
+                    recipient: post.user,
+                    sender: userId,
+                    type: 'like',
+                    message: 'liked your post',
+                    post: postId
+                });
             }else if(action==='downvote'){
                 post.downvotes.push(userId);
             }
@@ -139,4 +178,4 @@ const getAllPost = async(req,res) => {
             res.status(500).json({message:'Server error'})
         }
        }
-module.exports={createPost,getAllPost,DeletePost,votePost};
+module.exports={createPost,getAllPost,DeletePost,updatePost,votePost};

@@ -6,21 +6,37 @@ const getMyProfile=async(req,res)=>{
     console.log("🔍 Getting profile for userId:", req.userId);
 
     try{
-        const profile=await Profile.findOne({user:req.userId}).populate('user', 'username profilePicture');
+        let profile=await Profile.findOne({user:req.userId}).populate('user', 'username profilePicture');
+        
+        // If no profile exists, create a default one
         if(!profile){
-            return res.status(404).json({message:'profile not found'})
+            console.log("📝 No profile found, creating default profile for user:", req.userId);
+            profile = new Profile({
+                user: req.userId,
+                bio: '',
+                skills: [],
+                github: '',
+                linkedin: '',
+                website: '',
+                location: ''
+            });
+            await profile.save();
+            
+            // Populate the user field after saving
+            profile = await Profile.findById(profile._id).populate('user', 'username profilePicture');
         }
 
-         // Combine profile data with user's profile picture {now changed}
+         // Combine profile data with user's profile picture
         const response = {
             ...profile.toObject(),
             avatar: profile.user?.profilePicture || null
         };
 
+        console.log("✅ Profile fetched successfully");
         res.status(200).json(response)
     }
     catch(error){
-        console.error('error',error)
+        console.error('❌ Error fetching profile:',error)
         res.status(500).json({message:'server error while fetching profile'})
     }
 }
@@ -86,9 +102,17 @@ const UsersProfile=async(req,res)=>{
 };
 const uploadProfilePicture=async(req,res)=>{
     try{
+        const avatar = req.file
+            ? (req.file.location || `/uploads/${req.file.filename}`)
+            : null;
+
+        if (!avatar) {
+            return res.status(400).json({ message: 'No image uploaded' });
+        }
+
         const user=await User.findByIdAndUpdate(
             req.userId,
-            {profilePicture:`/uploads/${req.file.filename}`},
+            {profilePicture: avatar},
             {new:true}
         );
         res.status(200).json({

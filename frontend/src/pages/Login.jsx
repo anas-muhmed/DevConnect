@@ -1,71 +1,55 @@
-import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import axiosInstance from "../api/axios";
-import { toast } from "react-toastify";
-import { useDispatch } from "react-redux";
-import { loginSuccess } from "../redux/authSlice";
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
+import { loginSuccess } from '../redux/authSlice';
+import axiosInstance from '../api/axios';
+import { toast } from 'react-toastify';
+import { Mail, Lock, LogIn, Code2, ArrowRight } from 'lucide-react';
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
-
-function Login() {
+const Login = () => {
+  const [formData, setFormData] = useState({ email: '', password: '' });
+  const [isLoading, setIsLoading] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
+  const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  const navigate = useNavigate();
-
-  const [formData, setFormData] = useState({ email: "", password: "" });
-  const [rememberMe, setRememberMe] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-
-  const handleChange = (e) => {
-    setFormData((prev) => ({
-      ...prev,
-      [e.target.name]: e.target.value.trim(),
-    }));
-  };
+  const handleChange = (e) => setFormData(prev => ({ ...prev, [e.target.name]: e.target.value.trim() }));
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     if (!formData.email || !formData.password) {
-      toast.error("Please fill in all fields.");
+      toast.error('Please fill in all fields');
       return;
     }
 
     setIsLoading(true);
-
     try {
-      const res = await axiosInstance.post("/auth/login", formData);
-
+      const res = await axiosInstance.post('/auth/login', formData);
       const { token, user, message } = res.data;
 
       if (!token || !user) {
-        toast.error("Invalid login response: missing token or user.");
-        console.warn("Login response missing data:", res.data);
+        toast.error('Invalid login response');
         return;
       }
 
-      toast.success(message || "Logged in successfully");
+      toast.success(message || '🎉 Welcome back!');
 
       const userString = JSON.stringify(user);
-
       if (rememberMe) {
-        localStorage.setItem("token", token);
-        localStorage.setItem("user", userString);
+        localStorage.setItem('token', token);
+        localStorage.setItem('user', userString);
       } else {
-        sessionStorage.setItem("token", token);
-        sessionStorage.setItem("user", userString);
+        sessionStorage.setItem('token', token);
+        sessionStorage.setItem('user', userString);
       }
 
-      // 🔥 Update Redux store
       dispatch(loginSuccess({ token, user }));
-      navigate("/");
+      navigate('/');
     } catch (err) {
       if (err.response?.status === 429) {
-        toast.error("Please try after 15 minutes");
+        toast.error('Too many attempts. Please try after 15 minutes');
       } else {
-        console.error("Login error:", err);
-        toast.error(err.response?.data?.message || "Login failed");
+        toast.error(err.response?.data?.message || 'Login failed');
       }
     } finally {
       setIsLoading(false);
@@ -73,134 +57,93 @@ function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-blue-100 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
-          <div className="bg-gradient-to-r from-blue-600 to-indigo-700 p-6 text-white text-center">
-            <h1 className="text-3xl font-bold">Welcome Back</h1>
-            <p className="mt-2 opacity-90">Sign in to access your account</p>
+    <div className="auth-layout">
+      <div className="auth-brand-side">
+        <div className="auth-brand-content">
+          <div className="logo-icon logo-icon-large">
+            <Code2 size={40} />
+          </div>
+          <h1 className="auth-brand-title">DevConnect</h1>
+          <p className="auth-brand-subtitle">
+            Join the premier community where developers share knowledge, showcase skills, and build meaningful connections.
+          </p>
+        </div>
+      </div>
+
+      <div className="auth-form-side">
+        <div className="auth-card">
+          <div className="auth-header">
+            <h2>Welcome Back!</h2>
+            <p>Login to continue your developer journey</p>
           </div>
 
-          <div className="p-8">
-            <form className="space-y-5" onSubmit={handleSubmit}>
-              <div>
-                <label
-                  htmlFor="email"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Email
-                </label>
+          <form onSubmit={handleSubmit} className="auth-form">
+            <div className="form-group">
+              <label className="form-label">Email Address</label>
+              <div className="input-with-icon">
+                <Mail size={20} className="input-icon" />
                 <input
                   type="email"
-                  id="email"
                   name="email"
-                  placeholder="your@email.com"
                   value={formData.email}
                   onChange={handleChange}
+                  className="search-input"
+                  placeholder="you@example.com"
                   required
-                  autoComplete="email"
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition duration-200"
                 />
               </div>
+            </div>
 
-              <div>
-                <label
-                  htmlFor="password"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Password
-                </label>
+            <div className="form-group">
+              <label className="form-label">Password</label>
+              <div className="input-with-icon">
+                <Lock size={20} className="input-icon" />
                 <input
                   type="password"
-                  id="password"
                   name="password"
-                  placeholder="••••••••"
                   value={formData.password}
                   onChange={handleChange}
+                  className="search-input"
+                  placeholder="••••••••"
                   required
-                  autoComplete="current-password"
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition duration-200"
                 />
               </div>
-
-              <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <input
-                    type="checkbox"
-                    id="rememberMe"
-                    checked={rememberMe}
-                    onChange={(e) => setRememberMe(e.target.checked)}
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                  />
-                  <label
-                    htmlFor="rememberMe"
-                    className="ml-2 block text-sm text-gray-700"
-                  >
-                    Remember me
-                  </label>
-                </div>
-
-                <Link
-                  to="/forgot-password"
-                  className="text-sm text-blue-600 hover:underline"
-                >
-                  Forgot password?
-                </Link>
-              </div>
-
-              <button
-                type="submit"
-                disabled={isLoading}
-                className={`w-full py-3 px-4 bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 text-white font-semibold rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-75 transition duration-200 ${
-                  isLoading ? "opacity-70 cursor-not-allowed" : ""
-                }`}
-              >
-                {isLoading ? (
-                  <span className="flex items-center justify-center">
-                    <svg
-                      className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                    >
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                      ></circle>
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                      ></path>
-                    </svg>
-                    Signing in...
-                  </span>
-                ) : (
-                  "Sign In"
-                )}
-              </button>
-            </form>
-
-            <div className="mt-6 text-center text-sm text-gray-600">
-              <p>
-                Don't have an account?{" "}
-                <Link
-                  to="/register"
-                  className="font-medium text-blue-600 hover:text-blue-500 hover:underline"
-                >
-                  Sign up
-                </Link>
-              </p>
             </div>
+
+            <div className="auth-options">
+              <label className="checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                />
+                Remember me
+              </label>
+              <a href="#" className="forgot-password">Forgot password?</a>
+            </div>
+
+            <button type="submit" disabled={isLoading} className="btn-primary auth-btn flex-center gap-sm">
+              {isLoading ? (
+                <span>Loading...</span>
+              ) : (
+                <>
+                  <LogIn size={20} />
+                  <span>Login to DevConnect</span>
+                  <ArrowRight size={20} />
+                </>
+              )}
+            </button>
+          </form>
+
+          <div className="auth-footer">
+            <p className="auth-switch">
+              New to DevConnect? <Link to="/register">Create Your Account</Link>
+            </p>
           </div>
         </div>
       </div>
     </div>
   );
-}
+};
 
 export default Login;

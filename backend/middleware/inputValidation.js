@@ -17,13 +17,22 @@ body('username')
 
 //function to handle validation errors
 const handleValidationErrors=(req,res,next)=>{
+    console.log('📝 Validation check - Request body:', req.body);
+    
     const errors=validationResult(req);
     if(!errors.isEmpty()){
+        console.log('❌ Validation Failed:', errors.array());
         return res.status(400).json({
             message:'Validation Failed',
-            errors:errors.array()
+            errors:errors.array().map(err => ({
+                field: err.path,
+                message: err.msg,
+                value: err.value
+            }))
         });
     }
+    
+    console.log('✅ Validation passed');
     next();
     
 }
