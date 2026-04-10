@@ -75,14 +75,12 @@ const optimizeImage = async (req, res, next) => {
         Key: optimizedKey,
         Body: optimizedBuffer,
         ContentType: 'image/jpeg',
-        ACL: 'public-read'
       })),
       client.send(new PutObjectCommand({
         Bucket: process.env.AWS_S3_BUCKET,
         Key: thumbnailKey,
         Body: thumbnailBuffer,
         ContentType: 'image/jpeg',
-        ACL: 'public-read'
       })),
     ]);
 
