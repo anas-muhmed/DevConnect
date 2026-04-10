@@ -6,17 +6,12 @@ let s3Client;
 const getS3Client = () => {
   if (s3Client) return s3Client;
 
-  if (!process.env.AWS_REGION || !process.env.AWS_ACCESS_KEY_ID || !process.env.AWS_SECRET_ACCESS_KEY) {
-    throw new Error('Missing AWS S3 environment configuration');
+  if (!process.env.AWS_REGION) {
+    throw new Error('Missing AWS_REGION environment variable');
   }
 
-  s3Client = new S3Client({
-    region: process.env.AWS_REGION,
-    credentials: {
-      accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-    },
-  });
+  // No explicit credentials — AWS SDK automatically uses EC2 IAM Role
+  s3Client = new S3Client({ region: process.env.AWS_REGION });
 
   return s3Client;
 };

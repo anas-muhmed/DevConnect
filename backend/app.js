@@ -18,6 +18,7 @@ dotenv.config();
 
 const app = express();
 
+app.set('trust proxy', 1); // Trust first proxy (Nginx)
 app.use(helmet()); // Security headers
 
 // Allowed origins: local dev + production frontend URL from env
