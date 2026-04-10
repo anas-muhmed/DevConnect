@@ -3,21 +3,24 @@ const bcrypt = require("bcryptjs");
 const JWT = require("jsonwebtoken");
 
 // =================== REGISTER ===================
+
+{/* 1. Request received
+2. Log printed
+3. Extract fields
+4. DB check → no user
+5. Generate salt
+6. Hash password
+7. Create user object
+8. Save to DB
+9. Send 201 response*/
+}
+
 exports.register = async (req, res) => {
   try {
-    console.log('🔵 Register attempt - Received data:', {
-      username: req.body.username,
-      email: req.body.email,
-      name: req.body.name,
-      passwordLength: req.body.password?.length
-    });
-    
     const { username, email, password, name } = req.body;
-    
-    // Check if user already exists
+
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      console.log('❌ User already exists:', email);
       return res.status(400).json({ message: "User already exists!" });
     }
 
@@ -34,15 +37,11 @@ exports.register = async (req, res) => {
     });
     
     await newUser.save();
-    console.log('✅ User registered successfully:', username);
 
-    res.status(201).json({ message: "User registered successfully ✅" });
+    res.status(201).json({ message: "User registered successfully" });
   } catch (err) {
-    console.error('❌ Registration error:', err.message);
-    res.status(500).json({
-      message: "Server error while registering 😓",
-      error: err.message,
-    });
+    console.error('Registration error:', err.message);
+    res.status(500).json({ message: "Server error while registering" });
   }
 };
 
@@ -62,7 +61,7 @@ exports.login = async (req, res) => {
     }
 
     // 🎯 Generate tokens with appropriate lifespans
-    const accessToken = JWT.sign(
+    const accessToken = JWT.sign( //sign function takes 3 arguments{payload,secret key,expires}
       { id: user._id, username: user.username },
       process.env.JWT_SECRET,
       { expiresIn: "15m" } // 15 minutes - reasonable for security & UX
@@ -84,10 +83,6 @@ exports.login = async (req, res) => {
       path: '/',                   // Available site-wide
       maxAge: 7 * 24 * 60 * 60 * 1000  // 7 days
     });
-    
-    console.log("🍪 Refresh token cookie set for user:", user.username);
-    console.log("⏰ Access token expires in: 15 minutes");
-    console.log("⏰ Refresh token expires in: 7 days");
     
 
     res.status(200).json({

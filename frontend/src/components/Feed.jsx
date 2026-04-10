@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axiosInstance from '../api/axios';
 import Postcard from './Postcard';
 import { TrendingUp, Sparkles, Zap, Users, Search } from 'lucide-react';
@@ -7,14 +8,12 @@ const Feed = () => {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('latest');
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchPost = async () => {
       try {
-        const token = localStorage.getItem('token') || sessionStorage.getItem('token');
-        const response = await axiosInstance.get('/posts/all', {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const response = await axiosInstance.get('/posts/all');
         setPosts(response.data);
       } catch (error) {
         console.error('Error fetching posts:', error);
@@ -111,7 +110,7 @@ const Feed = () => {
             <Search size={48} className="empty-icon font-tertiary" style={{ color: 'var(--text-tertiary)' }} />
             <h3>No Posts Yet</h3>
             <p>Be the first to share something amazing! Click the Create button to start your journey.</p>
-            <button onClick={() => window.location.href = '/create'} className="btn-primary flex-center gap-sm mt-4">
+            <button onClick={() => navigate('/create')} className="btn-primary flex-center gap-sm mt-4">
               <Sparkles size={18} /> Create Your First Post
             </button>
           </div>

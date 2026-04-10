@@ -5,8 +5,6 @@ const { createNotification } = require('./notificationController');
 
 //for creating post
   const createPost=async (req,res)=>{
-    console.log(req.body); // Check if the title and username are correctly passed
-    console.log(req.file); // Check if the file is being received by multer
     try{
                 const {title,content,profilePic}=req.body;
                 const image = req.file

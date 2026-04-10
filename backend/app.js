@@ -20,8 +20,13 @@ const app = express();
 
 app.use(helmet()); // Security headers
 
-// Define allowed origins
-const allowedOrigins = ["http://127.0.0.1:5180", "http://localhost:5180"];
+// Allowed origins: local dev + production frontend URL from env
+const allowedOrigins = [
+  "http://127.0.0.1:5180",
+  "http://localhost:5180",
+  process.env.FRONTEND_URL,
+].filter(Boolean);
+
 app.use(
   cors({
     origin: function (origin, callback) {
@@ -37,22 +42,7 @@ app.use(
   })
 );
 
-app.use((req, res, next) => {
-  // Dynamically set Access-Control-Allow-Origin to match the request's Origin
-  if (allowedOrigins.includes(req.headers.origin)) {
-    res.header("Access-Control-Allow-Origin", req.headers.origin);
-  }
-  res.header("Access-Control-Allow-Credentials", "true");
-  next();
-});
-
-app.use((req, res, next) => {
-  console.log(`📡 [${req.method}] ${req.url}`);
-  next();
-});
-
-// Handle cross-origin requests
-app.use(express.json()); // Parse incoming JSON requests
+app.use(express.json({ limit: '10kb' })); // Parse JSON, cap body at 10kb to prevent abuse
 app.use(cookieParser()); // to read cookies effectively
 
 // Serve static files BEFORE routes (with CORS headers)

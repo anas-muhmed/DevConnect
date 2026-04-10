@@ -1,14 +1,17 @@
-const globalErrorHandler=(err,req,res,next)=>{
-    let statusCode=err.statusCode || 500;
-    let message=err.message||'Something Went Wrong';
+const globalErrorHandler = (err, _req, res, _next) => {
+    const statusCode = err.statusCode || 500;
+    const isProduction = process.env.NODE_ENV === 'production';
 
-    //debugging
-    console.error(`Error ${statusCode}:${message}`);
+    console.error(`Error ${statusCode}: ${err.message}`);
 
-    //send response to client
+    // In production, don't leak internal error details for 500s
+    const message = (statusCode === 500 && isProduction)
+        ? 'Something went wrong'
+        : err.message || 'Something went wrong';
+
     res.status(statusCode).json({
-        success:false,
-        message:message
+        success: false,
+        message,
     });
 };
 
