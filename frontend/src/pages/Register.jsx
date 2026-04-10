@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axiosInstance from '../api/axios';
 import { toast } from 'react-toastify';
-import { UserPlus, Mail, Lock, User, Code2, ArrowRight } from 'lucide-react';
+import { UserPlus, Mail, Lock, User, Code2, ArrowRight, Eye, EyeOff } from 'lucide-react';
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -12,12 +12,23 @@ const Register = () => {
     confirmPassword: ''
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState({});
   const navigate = useNavigate();
 
-  const handleChange = (e) => setFormData(prev => ({ ...prev, [e.target.name]: e.target.value.trim() }));
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value.trim() }));
+    // Clear field error on change
+    if (fieldErrors[name]) {
+      setFieldErrors(prev => ({ ...prev, [name]: '' }));
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setFieldErrors({});
 
     if (!formData.username || !formData.email || !formData.password || !formData.confirmPassword) {
       toast.error('Please fill in all fields');
@@ -25,12 +36,12 @@ const Register = () => {
     }
 
     if (formData.password !== formData.confirmPassword) {
-      toast.error('Passwords do not match');
+      setFieldErrors({ confirmPassword: 'Passwords do not match' });
       return;
     }
 
     if (formData.password.length < 8) {
-      toast.error('Password must be at least 8 characters');
+      setFieldErrors({ password: 'Password must be at least 8 characters' });
       return;
     }
 
@@ -42,10 +53,20 @@ const Register = () => {
         password: formData.password
       });
 
-      toast.success(res.data.message || '🎉 Account created successfully!');
+      toast.success(res.data.message || 'Account created successfully!');
       setTimeout(() => navigate('/login'), 1500);
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Registration failed');
+      const data = err.response?.data;
+
+      // Backend returns field-specific errors array
+      if (data?.errors && Array.isArray(data.errors)) {
+        const mapped = {};
+        data.errors.forEach(e => { mapped[e.field] = e.message; });
+        setFieldErrors(mapped);
+        toast.error('Please fix the errors below');
+      } else {
+        toast.error(data?.message || 'Registration failed');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -53,7 +74,6 @@ const Register = () => {
 
   return (
     <div className="auth-layout">
-      {/* Left side - Branding & Benefits */}
       <div className="auth-brand-side">
         <div className="auth-brand-content">
           <div className="logo-icon logo-icon-large">
@@ -61,17 +81,16 @@ const Register = () => {
           </div>
           <h1 className="auth-brand-title">DevConnect</h1>
           <p className="auth-brand-subtitle">
-            Start your developer journey. Join thousands of developers building careers and sharing knowledge.
+            Start your developer journey. Join developers building careers and sharing knowledge.
           </p>
         </div>
       </div>
 
-      {/* Right side - Register Form */}
       <div className="auth-form-side">
         <div className="auth-card">
           <div className="auth-header">
             <h2>Create Account</h2>
-            <p>Join 10,000+ developers today</p>
+            <p>Join the DevConnect community</p>
           </div>
 
           <form onSubmit={handleSubmit} className="auth-form">
@@ -84,11 +103,14 @@ const Register = () => {
                   name="username"
                   value={formData.username}
                   onChange={handleChange}
-                  className="search-input"
-                  placeholder="johndoe"
+                  className={`search-input ${fieldErrors.username ? 'input-error' : ''}`}
+                  placeholder="Letters and numbers only (e.g. johndoe)"
                   required
                 />
               </div>
+              {fieldErrors.username && (
+                <p className="field-error">{fieldErrors.username}</p>
+              )}
             </div>
 
             <div className="form-group">
@@ -100,11 +122,14 @@ const Register = () => {
                   name="email"
                   value={formData.email}
                   onChange={handleChange}
-                  className="search-input"
+                  className={`search-input ${fieldErrors.email ? 'input-error' : ''}`}
                   placeholder="john@example.com"
                   required
                 />
               </div>
+              {fieldErrors.email && (
+                <p className="field-error">{fieldErrors.email}</p>
+              )}
             </div>
 
             <div className="form-group">
@@ -112,15 +137,26 @@ const Register = () => {
               <div className="input-with-icon">
                 <Lock size={20} className="input-icon" />
                 <input
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   name="password"
                   value={formData.password}
                   onChange={handleChange}
-                  className="search-input"
-                  placeholder="••••••••"
+                  className={`search-input ${fieldErrors.password ? 'input-error' : ''}`}
+                  placeholder="Min 8 characters"
                   required
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(p => !p)}
+                  className="password-toggle"
+                  tabIndex={-1}
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
               </div>
+              {fieldErrors.password && (
+                <p className="field-error">{fieldErrors.password}</p>
+              )}
             </div>
 
             <div className="form-group">
@@ -128,20 +164,31 @@ const Register = () => {
               <div className="input-with-icon">
                 <Lock size={20} className="input-icon" />
                 <input
-                  type="password"
+                  type={showConfirm ? 'text' : 'password'}
                   name="confirmPassword"
                   value={formData.confirmPassword}
                   onChange={handleChange}
-                  className="search-input"
+                  className={`search-input ${fieldErrors.confirmPassword ? 'input-error' : ''}`}
                   placeholder="••••••••"
                   required
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirm(p => !p)}
+                  className="password-toggle"
+                  tabIndex={-1}
+                >
+                  {showConfirm ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
               </div>
+              {fieldErrors.confirmPassword && (
+                <p className="field-error">{fieldErrors.confirmPassword}</p>
+              )}
             </div>
 
             <button type="submit" disabled={isLoading} className="btn-primary auth-btn flex-center gap-sm mt-6">
               {isLoading ? (
-                <span>Loading...</span>
+                <span>Creating account...</span>
               ) : (
                 <>
                   <UserPlus size={20} />
