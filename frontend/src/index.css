@@ -180,6 +180,83 @@ ul {
   }
 }
 
+@media (max-width: 768px) {
+  /* Hide sidebar on mobile */
+  .layout-sidebar {
+    display: none;
+  }
+
+  /* Full width content */
+  .layout-content {
+    padding: 12px;
+  }
+
+  .layout-main {
+    padding: 0;
+  }
+
+  /* Navbar mobile */
+  .navbar-container {
+    padding: 0 12px;
+  }
+
+  .navbar-search {
+    max-width: 160px;
+  }
+
+  .navbar-logo-text {
+    display: none;
+  }
+
+  /* Feed */
+  .feed-header {
+    flex-direction: column;
+    gap: 12px;
+    align-items: flex-start;
+  }
+
+  .feed-tabs {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  /* Post cards */
+  .post-card {
+    padding: 14px;
+  }
+
+  .post-image {
+    max-height: 200px;
+  }
+
+  /* Profile */
+  .profile-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .profile-stats {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  /* Create post */
+  .create-post-container {
+    padding: 12px;
+  }
+
+  /* Auth pages already handle mobile via existing query */
+
+  /* Post details */
+  .post-detail-container {
+    padding: 12px;
+  }
+
+  /* Search */
+  .search-results-container {
+    padding: 12px;
+  }
+}
+
 .avatar-img {
   width: 40px;
   height: 40px;
