@@ -5,7 +5,7 @@ import moment from "moment";
 import { Link } from "react-router-dom";
 import {
   Edit2, Trash2, X, Check, MoreVertical, Heart, MessageCircle,
-  Share2, Bookmark, TrendingUp, ArrowUp, ArrowDown, Send, Sparkles
+  Share2, Bookmark, TrendingUp, ArrowUp, ArrowDown, Send, Sparkles, Clock
 } from "lucide-react";
 import { getAvatarUrl, getInitials, getAvatarColor } from "../utils/avatarUrl";
 
@@ -132,7 +132,7 @@ const Postcard = ({ post, isDetailedView, onUpdate, onDelete }) => {
     }
   };
 
-  const username = postData.username || postData.user?.username || "Unknown";
+  const username = postData.user?.username || postData.username || "Unknown";
   const profilePic = postData.user?.profilePicture || postData.profilePic;
   const resolvedProfilePic = getAvatarUrl(profilePic);
   const initials = getInitials(username);
@@ -151,7 +151,7 @@ const Postcard = ({ post, isDetailedView, onUpdate, onDelete }) => {
           )}
           <div className="post-author-info">
             <h3>{username} {isOwner && <span className="post-badge">You</span>}</h3>
-            <span className="time">{moment(postData.createdAt).fromNow()}</span>
+            <span className="time"><Clock size={11} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '3px', opacity: 0.7 }} />{moment(postData.createdAt).fromNow()}</span>
           </div>
         </Link>
 
@@ -281,7 +281,7 @@ const Postcard = ({ post, isDetailedView, onUpdate, onDelete }) => {
                       <div className="comment-header">
                         <div className="post-author-info">
                           <h3 style={{ fontSize: '13px' }}>{commentUsername} {isCommentOwner && <span className="post-badge text-xs">You</span>}</h3>
-                          <span className="time">{moment(comment.createdAt).fromNow()}</span>
+                          <span className="time"><Clock size={10} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '3px', opacity: 0.7 }} />{moment(comment.createdAt).fromNow()}</span>
                         </div>
                       </div>
                       <p style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>{comment.text}</p>
