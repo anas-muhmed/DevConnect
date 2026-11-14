@@ -4,7 +4,6 @@
 
 **A production-grade developer community platform — built, containerized, and deployed to AWS.**
 
-[![Live Demo](https://img.shields.io/badge/Live%20Demo-Visit%20Site-4CAF50?style=for-the-badge&logo=amazon-aws)](https://devconnectsapp.tech)
 [![Node.js](https://img.shields.io/badge/Node.js-18+-339933?style=for-the-badge&logo=node.js&logoColor=white)](https://nodejs.org)
 [![Docker](https://img.shields.io/badge/Docker-Containerized-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://docker.com)
 [![AWS](https://img.shields.io/badge/AWS-EC2%20Deployed-FF9900?style=for-the-badge&logo=amazon-aws&logoColor=white)](https://aws.amazon.com)
@@ -13,7 +12,9 @@
 
 ---
 
-![DevConnect Demo](./assets/demo.png)
+**Start here** · [AWS deployment workflow](.github/workflows/deploy.yml) · [Architecture](#architecture) · [Run with Docker](#run-with-docker)
+
+![DevConnect application screenshot](./assets/demo.png)
 
 ---
 
@@ -154,13 +155,7 @@ GitHub Actions workflow on every push to `main`:
 Code push → Run tests → Docker build → Push to AWS ECR → SSH into EC2 → Pull & restart containers
 ```
 
-Pipeline defined in `.github/workflows/deploy.yml`.
-
----
-
-## Live Demo
-
-🌐 **[Visit DevConnect →](https://devconnectsapp.tech)**
+[Read the GitHub Actions workflow](.github/workflows/deploy.yml). The image build requires successful tests, and deployment requires the build and push to complete.
 
 ---
 
